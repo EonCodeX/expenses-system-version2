@@ -1,0 +1,29 @@
+{
+  "bills": [
+    {
+      "id": 1,
+      "name": "Electric Bill",
+      "amount": 1500,
+      "dueDate": "2026-10-25",
+      "paid": false,
+      "paidDate": null
+    },
+    {
+      "id": 2,
+      "name": "Internet",
+      "amount": 999,
+      "dueDate": "2026-10-20",
+      "paid": false,
+      "paidDate": null
+    },
+    {
+      "id": 3,
+      "name": "Car Loan",
+      "amount": 5000,
+      "dueDate": "2026-10-15",
+      "paid": false,
+      "paidDate": null
+    }
+  ],
+  "nextId": 4
+}

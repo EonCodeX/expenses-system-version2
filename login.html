@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In · Expense Monitor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 55%, #4c1d95 100%);
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image: radial-gradient(circle, rgba(255, 255, 255, .04) 1px, transparent 1px);
+      background-size: 32px 32px;
+    }
+
+    /* ── Rectangular card ── */
+    .card {
+      display: flex;
+      width: 100%;
+      max-width: 820px;
+      min-height: 480px;
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 32px 100px rgba(0, 0, 0, .45), 0 0 0 1px rgba(255, 255, 255, .08);
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Left panel (branding) ── */
+    .panel-left {
+      flex: 0 0 340px;
+      background: linear-gradient(160deg, #3730a3 0%, #4c1d95 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 36px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .panel-left::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle, rgba(255, 255, 255, .06) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    .brand-logo-wrap {
+      background: #fff;
+      border-radius: 18px;
+      padding: 10px 14px;
+      margin-bottom: 22px;
+      display: inline-block;
+      position: relative;
+    }
+
+    .brand-logo-wrap img {
+      width: 90px;
+      height: 75px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .panel-left h1 {
+      font-size: 22px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -.3px;
+      position: relative;
+    }
+
+    .panel-left p {
+      font-size: 13px;
+      color: rgba(255, 255, 255, .6);
+      margin-top: 8px;
+      line-height: 1.6;
+      position: relative;
+    }
+
+    .panel-divider {
+      width: 40px;
+      height: 3px;
+      background: rgba(255, 255, 255, .25);
+      border-radius: 99px;
+      margin: 18px auto;
+      position: relative;
+    }
+
+    .panel-tagline {
+      font-size: 12px;
+      color: rgba(255, 255, 255, .4);
+      position: relative;
+    }
+
+    /* ── Right panel (form) ── */
+    .panel-right {
+      flex: 1;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 48px 44px;
+    }
+
+    .form-heading {
+      margin-bottom: 28px;
+    }
+
+    .form-heading h2 {
+      font-size: 22px;
+      font-weight: 800;
+      color: #1e293b;
+      letter-spacing: -.3px;
+    }
+
+    .form-heading p {
+      font-size: 13px;
+      color: #64748b;
+      margin-top: 5px;
+    }
+
+    /* ── Error banner ── */
+    .error-msg {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+      border-radius: 9px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 18px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .error-msg.show {
+      display: flex;
+    }
+
+    /* ── Fields ── */
+    .field {
+      margin-bottom: 16px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 6px;
+    }
+
+    .input-wrap {
+      position: relative;
+    }
+
+    .input-wrap .icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 15px;
+      pointer-events: none;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 11px 13px 11px 38px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: inherit;
+      color: #1e293b;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+      background: #f8fafc;
+    }
+
+    .field input:focus {
+      border-color: #6366f1;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, .12);
+    }
+
+    /* ── Button ── */
+    .btn-login {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      margin-top: 6px;
+      transition: opacity .2s, transform .1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-login:hover:not(:disabled) {
+      opacity: .88;
+      transform: translateY(-1px);
+    }
+
+    .btn-login:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn-login:disabled {
+      opacity: .65;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .spinner {
+      display: none;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, .35);
+      border-top-color: #fff;
+      animation: spin .65s linear infinite;
+      flex-shrink: 0;
+    }
+
+    .btn-login.loading .spinner {
+      display: block;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ── Footer ── */
+    .form-footer {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    .form-footer a {
+      color: #6366f1;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .form-footer a:hover {
+      text-decoration: underline;
+    }
+
+    .form-note {
+      margin-top: 10px;
+      text-align: center;
+      font-size: 11px;
+      color: #cbd5e1;
+    }
+
+    /* ── Mobile ── */
+    @media (max-width: 640px) {
+      body {
+        padding: 0;
+        align-items: flex-start;
+        background: #fff;
+      }
+
+      .card {
+        flex-direction: column;
+        max-width: 100%;
+        width: 100%;
+        min-height: 100dvh;
+        border-radius: 0;
+        box-shadow: none;
+      }
+
+      /* Branding header — centered, gradient banner */
+      .panel-left {
+        flex: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 24px 32px;
+        padding-top: calc(40px + env(safe-area-inset-top));
+        text-align: center;
+      }
+
+      .brand-logo-wrap {
+        margin-bottom: 14px;
+        padding: 10px 14px;
+      }
+
+      .brand-logo-wrap img {
+        width: 64px;
+        height: 52px;
+      }
+
+      .panel-left h1 { font-size: 20px; }
+
+      .panel-left p {
+        font-size: 12px;
+        margin-top: 6px;
+      }
+
+      .panel-divider { margin: 14px auto; }
+      .panel-tagline { font-size: 11px; }
+
+      /* White form area */
+      .panel-right {
+        flex: 1;
+        background: #fff;
+        border-radius: 24px 24px 0 0;
+        margin-top: -24px;
+        padding: 32px 24px;
+        padding-bottom: calc(32px + env(safe-area-inset-bottom));
+        justify-content: flex-start;
+        box-shadow: 0 -4px 24px rgba(0,0,0,.08);
+      }
+
+      .form-heading { margin-bottom: 22px; }
+      .form-heading h2 { font-size: 20px; }
+
+      /* iOS zoom fix */
+      .field input { font-size: 16px; }
+
+      /* Bigger tap target */
+      .btn-login {
+        padding: 15px;
+        font-size: 16px;
+        border-radius: 12px;
+      }
+
+      .help-btn {
+        top: calc(12px + env(safe-area-inset-top));
+        right: 14px;
+      }
+    }
+
+    /* ── Small phones ── */
+    @media (max-width: 380px) {
+      .panel-left { padding: 28px 20px 28px; }
+      .panel-right { padding: 26px 18px 28px; }
+      .form-heading h2 { font-size: 18px; }
+    }
+
+    /* ── Help button (inside card, top-right) ── */
+    .help-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 32px;
+      height: 32px;
+      background: rgba(255, 255, 255, .18);
+      border: 1px solid rgba(255, 255, 255, .28);
+      border-radius: 50%;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      transition: background .2s;
+    }
+
+    .help-btn:hover {
+      background: rgba(255, 255, 255, .32);
+    }
+
+    /* ── Help overlay ── */
+    .help-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .55);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .help-overlay.open {
+      display: flex;
+    }
+
+    .help-modal {
+      background: #fff;
+      border-radius: 18px;
+      width: 100%;
+      max-width: 520px;
+      max-height: 90dvh;
+      overflow-y: auto;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, .35);
+    }
+
+    @media (max-width: 640px) {
+      .help-overlay {
+        padding: 12px;
+        align-items: flex-end;
+      }
+
+      .help-modal {
+        border-radius: 18px 18px 0 0;
+        max-height: 85dvh;
+      }
+    }
+
+    .help-header {
+      background: linear-gradient(135deg, #3730a3, #4c1d95);
+      padding: 18px 22px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .help-header h2 {
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+      margin: 0;
+    }
+
+    .help-header p {
+      font-size: 12px;
+      color: rgba(255, 255, 255, .65);
+      margin: 4px 0 0;
+    }
+
+    .help-close {
+      background: rgba(255, 255, 255, .15);
+      border: none;
+      color: #fff;
+      font-size: 16px;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .help-steps-list {
+      padding: 18px 22px;
+    }
+
+    .help-step-item {
+      display: flex;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .help-step-item:last-child {
+      border-bottom: none;
+    }
+
+    .help-step-num {
+      width: 26px;
+      height: 26px;
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .help-step-content strong {
+      font-size: 13px;
+      color: #1e293b;
+      font-weight: 700;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .help-step-content span {
+      font-size: 12px;
+      color: #64748b;
+      line-height: 1.5;
+    }
+
+    .help-footer-note {
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      padding: 12px 22px;
+      font-size: 11px;
+      color: #94a3b8;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Help modal -->
+  <div class="help-overlay" id="help-overlay" onclick="if(event.target===this)closeHelp()">
+    <div class="help-modal">
+      <div class="help-header">
+        <div>
+          <h2>📖 How to Use Expense Monitor</h2>
+          <p>Quick guide for members — register, sign in, and track expenses</p>
+        </div>
+        <button class="help-close" onclick="closeHelp()">✕</button>
+      </div>
+      <div class="help-steps-list">
+        <div class="help-step-item">
+          <div class="help-step-num">1</div>
+          <div class="help-step-content">
+            <strong>Create an Account</strong>
+            <span>Click <em>Create Account</em> below. Choose your household group, pick a username &amp; password, then
+              submit.</span>
+          </div>
+        </div>
+        <div class="help-step-item">
+          <div class="help-step-num">2</div>
+          <div class="help-step-content">
+            <strong>Wait for Admin Approval</strong>
+            <span>Your account starts as <em>Pending</em>. The admin will approve it from the Users page. You'll be able
+              to sign in once approved.</span>
+          </div>
+        </div>
+        <div class="help-step-item">
+          <div class="help-step-num">3</div>
+          <div class="help-step-content">
+            <strong>Sign In</strong>
+            <span>Enter your username and password here. Default admin credentials: <code
+                style="background:#f1f5f9;padding:1px 5px;border-radius:4px;font-size:11px">Username / Password</code></span>
+          </div>
+        </div>
+        <div class="help-step-item">
+          <div class="help-step-num">4</div>
+          <div class="help-step-content">
+            <strong>Track Bills &amp; Loans</strong>
+            <span>Go to <em>Bills</em> to add monthly expenses and mark them paid. Go to <em>Loans</em> to track
+              borrowed money and log payments.</span>
+          </div>
+        </div>
+      </div>
+      <div class="help-footer-note">
+        💡 Tip: Change the default admin password after your first login via the sidebar → Change Password
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+
+    <!-- ℹ️ Help button at top-right of card -->
+    <button class="help-btn" onclick="openHelp()" title="How to use this app">ℹ️</button>
+
+    <!-- Left branding panel -->
+    <div class="panel-left">
+      <div class="brand-logo-wrap">
+        <img src="logos/expense_logo.png" alt="Expense Monitor" onerror="this.parentElement.style.display='none'">
+      </div>
+      <h1>Expense Monitor</h1>
+      <p>Track your household bills,<br>loans, and expenses with ease.</p>
+      <div class="panel-divider"></div>
+      <span class="panel-tagline">Cut-off Bill Tracker · v1.0</span>
+    </div>
+
+    <!-- Right form panel -->
+    <div class="panel-right">
+      <div class="form-heading">
+        <h2>Welcome back 👋</h2>
+        <p>Sign in to your account to continue</p>
+      </div>
+
+      <div class="error-msg" id="error-msg">
+        <span>🔒</span>
+        <span id="error-text">Invalid username or password.</span>
+      </div>
+
+      <form id="login-form" onsubmit="doLogin(event)" autocomplete="on" novalidate>
+        <div class="field">
+          <label>Username</label>
+          <div class="input-wrap">
+            <span class="icon">👤</span>
+            <input type="text" id="f-username" placeholder="Enter username" autocomplete="username" required
+              spellcheck="false" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <div class="input-wrap">
+            <span class="icon">🔑</span>
+            <input type="password" id="f-password" placeholder="Enter password" autocomplete="current-password"
+              required />
+          </div>
+        </div>
+        <button type="submit" class="btn-login" id="btn-login">
+          <div class="spinner"></div>
+          <span id="btn-text">Sign In</span>
+        </button>
+      </form>
+
+      <div class="form-footer">
+        Don't have an account? <a href="/register">Create Account</a>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ── Response decryption ───────────────────────────────────────
+    const _EK = '7f3a9c2e1d8b054f6a4e7c3b9d2f1e085c4b7a3e9d1f208a6e4c7b3a9d2f108e';
+    function _h2b(h) {
+      const a = new Uint8Array(h.length / 2);
+      for (let i = 0; i < a.length; i++) a[i] = parseInt(h.substr(i * 2, 2), 16);
+      return a;
+    }
+    async function _dec(enc) {
+      const parts = enc.split(':');
+      const iv  = _h2b(parts[0]);
+      const tag = _h2b(parts[1]);
+      const ct  = _h2b(parts[2]);
+      const buf = new Uint8Array(ct.length + tag.length);
+      buf.set(ct); buf.set(tag, ct.length);
+      const key = await crypto.subtle.importKey('raw', _h2b(_EK), { name: 'AES-GCM' }, false, ['decrypt']);
+      const dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, buf);
+      return JSON.parse(new TextDecoder().decode(dec));
+    }
+    async function _apiJson(res) {
+      const d = await res.json();
+      return d.enc ? _dec(d.enc) : d;
+    }
+
+    function openHelp() { document.getElementById('help-overlay').classList.add('open'); }
+    function closeHelp() { document.getElementById('help-overlay').classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeHelp(); });
+
+    let lockTimer = null;
+
+    function startLockCountdown(unlockAt) {
+      const btn    = document.getElementById('btn-login');
+      const btnTxt = document.getElementById('btn-text');
+      const errEl  = document.getElementById('error-msg');
+      const errTxt = document.getElementById('error-text');
+
+      btn.disabled      = true;
+      btn.style.opacity = '0.55';
+      btn.style.cursor  = 'not-allowed';
+      errEl.classList.add('show');
+
+      clearInterval(lockTimer);
+      lockTimer = setInterval(() => {
+        const secsLeft = Math.ceil((unlockAt - Date.now()) / 1000);
+        if (secsLeft <= 0) {
+          clearInterval(lockTimer);
+          localStorage.removeItem('login_lock_until');
+          btn.disabled      = false;
+          btn.style.opacity = '';
+          btn.style.cursor  = '';
+          btnTxt.textContent = 'Sign In';
+          errEl.classList.remove('show');
+          document.getElementById('f-username').focus();
+          return;
+        }
+        const m = Math.floor(secsLeft / 60);
+        const s = secsLeft % 60;
+        btnTxt.textContent = `Locked — ${m}:${String(s).padStart(2, '0')}`;
+        errTxt.textContent = `Too many failed attempts. Try again in ${m} minute${m !== 1 ? 's' : ''}.`;
+      }, 1000);
+    }
+
+    function lockButton(message) {
+      const match = message.match(/(\d+)\s*minute/);
+      if (!match) return;
+      const unlockAt = Date.now() + parseInt(match[1]) * 60 * 1000;
+      localStorage.setItem('login_lock_until', unlockAt);
+      document.getElementById('error-text').textContent = message;
+      startLockCountdown(unlockAt);
+    }
+
+    // Re-apply lock if still active after a refresh
+    (function checkStoredLock() {
+      const stored = localStorage.getItem('login_lock_until');
+      if (!stored) return;
+      const unlockAt = parseInt(stored);
+      if (Date.now() < unlockAt) {
+        startLockCountdown(unlockAt);
+        document.getElementById('error-text').textContent =
+          `Too many failed attempts. Please wait for the timer.`;
+        document.getElementById('error-msg').classList.add('show');
+      } else {
+        localStorage.removeItem('login_lock_until');
+        document.getElementById('f-username').focus();
+      }
+    })();
+
+    if (!document.getElementById('btn-login').disabled) {
+      document.getElementById('f-username').focus();
+    }
+
+    async function doLogin(e) {
+      e.preventDefault();
+      const btn    = document.getElementById('btn-login');
+      const errEl  = document.getElementById('error-msg');
+      const errTxt = document.getElementById('error-text');
+      const btnTxt = document.getElementById('btn-text');
+      const username = document.getElementById('f-username').value.trim();
+      const password = document.getElementById('f-password').value;
+
+      errEl.classList.remove('show');
+      btn.disabled = true;
+      btn.classList.add('loading');
+      btnTxt.textContent = 'Signing in…';
+
+      try {
+        const res  = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await _apiJson(res);
+        if (data.ok) {
+          btnTxt.textContent = 'Redirecting…';
+          window.location.href = '/';
+        } else if (res.status === 429) {
+          btn.classList.remove('loading');
+          lockButton(data.error);
+          document.getElementById('f-password').value = '';
+        } else {
+          errTxt.textContent = data.error || 'Invalid username or password.';
+          errEl.classList.add('show');
+          document.getElementById('f-password').value = '';
+          document.getElementById('f-password').focus();
+          btn.disabled = false;
+          btn.classList.remove('loading');
+          btnTxt.textContent = 'Sign In';
+        }
+      } catch {
+        errTxt.textContent = 'Cannot connect to server. Is it running?';
+        errEl.classList.add('show');
+        btn.disabled = false;
+        btn.classList.remove('loading');
+        btnTxt.textContent = 'Sign In';
+      }
+    }
+  </script>
+</body>
+
+</html>

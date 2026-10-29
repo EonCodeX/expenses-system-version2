@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cut-off Expense Monitor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="/app.css">
+</head>
+
+<body>
+
+  <!-- ════ SIDEBAR ════ -->
+  <aside class="sidebar">
+    <div class="sidebar-brand" style="text-align:left">
+      <!-- <div style="background:#fff;border-radius:12px;padding:6px 10px;display:inline-block;margin-bottom:10px">
+        <img src="logos/expense_logo.png" alt="Expense Monitor"
+          style="width:70px;height:58px;object-fit:contain;display:block;"
+          onerror="this.parentElement.style.display='none'">
+      </div> -->
+      <h2>Expenses Monitoring</h2>
+      <p>Cut-off Bill Tracker</p>
+    </div>
+    <div class="sidebar-section">Menu</div>
+    <button class="nav-item active" data-page="dashboard">
+      <span class="nav-icon"><i class="fa-solid fa-gauge-high"></i></span>
+      <span>Dashboard</span>
+    </button>
+    <button class="nav-item" data-page="bills">
+      <span class="nav-icon"><i class="fa-solid fa-file-invoice-dollar"></i></span>
+      <span>Bills</span>
+      <span class="nav-badge" id="nav-overdue-badge">0</span>
+    </button>
+    <button class="nav-item" data-page="loans">
+      <span class="nav-icon"><i class="fa-solid fa-credit-card"></i></span>
+      <span>Loans</span>
+    </button>
+    <div class="nav-group" id="nav-admin-group" style="display:none">
+      <button class="nav-group-header" onclick="toggleNavGroup()">
+        <span class="nav-icon"><i class="fa-solid fa-sliders"></i></span>
+        <span>Management</span>
+        <span class="nav-group-arrow">▶</span>
+      </button>
+      <div class="nav-group-children">
+        <button class="nav-sub-item" data-page="users" id="nav-users">
+          <span class="nav-icon"><i class="fa-solid fa-users"></i></span>
+          <span>Users</span>
+          <span class="nav-badge" id="nav-pending-badge">0</span>
+        </button>
+        <button class="nav-sub-item" data-page="groups" id="nav-groups">
+          <span class="nav-icon"><i class="fa-solid fa-people-roof"></i></span>
+          <span>Groups</span>
+        </button>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      v1.0
+      <button onclick="openChangePw()"
+        style="display:block;width:100%;margin-top:10px;padding:7px 10px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.12);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;transition:background .15s"
+        onmouseover="this.style.background='rgba(255,255,255,.15)'"
+        onmouseout="this.style.background='rgba(255,255,255,.08)'"><i class="fa-solid fa-lock"
+          style="margin-right:6px"></i> Change Password</button>
+      <button onclick="doLogout()"
+        style="display:block;width:100%;margin-top:6px;padding:7px 10px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.65);border:1px solid rgba(255,255,255,.15);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;transition:background .15s"
+        onmouseover="this.style.background='rgba(255,255,255,.18)'"
+        onmouseout="this.style.background='rgba(255,255,255,.1)'"><i class="fa-solid fa-right-from-bracket"
+          style="margin-right:6px"></i> Sign Out</button>
+    </div>
+  </aside>
+
+  <!-- ════ MOBILE BOTTOM NAV ════ -->
+  <nav class="mobile-nav" id="mobile-nav">
+    <button class="mn-item active" data-page="dashboard">
+      <span class="mn-icon"><i class="fa-solid fa-gauge-high"></i></span>
+      <span class="mn-label">Dashboard</span>
+    </button>
+    <button class="mn-item" data-page="bills">
+      <span class="mn-icon"><i class="fa-solid fa-file-invoice-dollar"></i></span>
+      <span class="mn-label">Bills</span>
+      <span class="mn-badge" id="mn-overdue-badge">0</span>
+    </button>
+    <button class="mn-item" data-page="loans">
+      <span class="mn-icon"><i class="fa-solid fa-credit-card"></i></span>
+      <span class="mn-label">Loans</span>
+    </button>
+    <button class="mn-item" data-page="users" id="mn-users" style="display:none">
+      <span class="mn-icon"><i class="fa-solid fa-users"></i></span>
+      <span class="mn-label">Users</span>
+      <span class="mn-badge" id="mn-pending-badge">0</span>
+    </button>
+    <button class="mn-item" data-page="groups" id="mn-groups" style="display:none">
+      <span class="mn-icon"><i class="fa-solid fa-people-roof"></i></span>
+      <span class="mn-label">Groups</span>
+    </button>
+  </nav>
+
+  <!-- ════ CONTENT ════ -->
+  <div class="content">
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <span class="topbar-title" id="page-title">Dashboard</span>
+      <span class="topbar-sub" id="page-sub"></span>
+      <div class="topbar-right">
+        <!-- Group context pill / switcher -->
+        <div id="group-switcher-wrap" style="display:none">
+          <!-- Admin: dropdown select -->
+          <select id="group-switcher-select" title="Switch active group"
+            style="padding:5px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;font-family:inherit;color:var(--text);background:var(--card);cursor:pointer;outline:none;display:none"
+            onchange="switchGroup(this.value)">
+          </select>
+          <!-- Non-admin: static badge -->
+          <span id="group-badge"
+            style="display:none;padding:5px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--text);background:var(--card);white-space:nowrap">
+          </span>
+        </div>
+        <span id="top-date"></span>
+        <button class="theme-btn" id="btn-help" onclick="openHelp()" title="How to use this app"
+          style="font-size:16px">ℹ️</button>
+        <button class="theme-btn" id="btn-theme" title="Toggle dark mode">🌙</button>
+        <!-- Notification Bell -->
+        <div class="notif-wrap">
+          <button class="notif-btn" id="btn-bell" title="Notifications">🔔
+            <span class="notif-badge" id="notif-badge">0</span>
+          </button>
+          <div class="notif-panel" id="notif-panel">
+            <div class="notif-panel-head">
+              <h3>Notifications</h3>
+              <span id="notif-count-label" style="font-size:11px;color:var(--muted)"></span>
+            </div>
+            <div id="notif-body"></div>
+          </div>
+        </div>
+        <button id="btn-add-bill">＋ <span class="btn-text">Add Bill</span></button>
+        <button class="mobile-logout-btn" onclick="doLogout()" title="Sign Out">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ════ DASHBOARD PAGE ════ -->
+    <div id="page-dashboard" class="page active">
+
+      <!-- Dashboard filter bar -->
+      <div class="dash-filter-bar">
+        <span class="df-label">📅 Period:</span>
+        <select class="filter-select" id="dash-month" style="min-width:140px">
+          <option value="">All Months</option>
+        </select>
+        <div class="tabs">
+          <button class="tab active" data-dashcut="">All Cuts</button>
+          <button class="tab" data-dashcut="1-15">1st Cut (1–15)</button>
+          <button class="tab" data-dashcut="16-31">2nd Cut (16–31)</button>
+        </div>
+        <span id="dash-filter-label"></span>
+      </div>
+
+      <div class="page-body">
+
+        <!-- Hero KPIs -->
+        <div class="hero-row">
+          <div class="hero-card hc-total">
+            <div class="hc-label">📊 Total Bills</div>
+            <div class="hc-value" id="c-total-amt">₱0.00</div>
+            <div class="hc-sub"><strong id="c-total">0</strong> bills recorded</div>
+          </div>
+          <div class="hero-card hc-paid">
+            <div class="hc-label">✅ Total Paid</div>
+            <div class="hc-value" id="c-paid-amt">₱0.00</div>
+            <div class="hc-sub"><strong id="c-paid">0</strong> bills paid &nbsp;·&nbsp; <strong
+                id="c-paid-pct">0%</strong> of total</div>
+            <div class="hc-bar-wrap">
+              <div class="hc-bar" id="c-paid-bar" style="width:0%"></div>
+            </div>
+          </div>
+          <div class="hero-card hc-remain">
+            <div class="hc-label">⏳ Remaining to Pay</div>
+            <div class="hc-value" id="c-remain-amt">₱0.00</div>
+            <div class="hc-sub"><strong id="c-remain">0</strong> bills unpaid or overdue</div>
+          </div>
+        </div>
+
+        <!-- Progress strip -->
+        <div class="progress-strip">
+          <span class="ps-label">💰 Overall Payment Progress</span>
+          <div class="ps-bar-wrap">
+            <div class="ps-bar" id="ps-bar" style="width:0%"></div>
+          </div>
+          <span class="ps-pct" id="ps-pct">0%</span>
+          <span class="ps-text" id="ps-text">Loading…</span>
+        </div>
+
+        <!-- Stat cards -->
+        <div class="stat-row">
+          <div class="stat-card sc-overdue">
+            <div class="sc-icon">🚨</div>
+            <div class="sc-info">
+              <div class="sc-label">Overdue</div>
+              <div class="sc-value" id="c-overdue">0</div>
+              <div class="sc-sub" id="c-overdue-amt">₱0.00</div>
+            </div>
+            <span class="sc-badge" id="c-overdue-badge" style="display:none">PAST DUE</span>
+          </div>
+          <div class="stat-card sc-week">
+            <div class="sc-icon">⚠️</div>
+            <div class="sc-info">
+              <div class="sc-label">Due This Week</div>
+              <div class="sc-value" id="c-week">0</div>
+              <div class="sc-sub" id="c-week-amt">₱0.00</div>
+            </div>
+            <span class="sc-badge" id="c-week-badge" style="display:none">URGENT</span>
+          </div>
+          <div class="stat-card sc-today">
+            <div class="sc-icon">⏰</div>
+            <div class="sc-info">
+              <div class="sc-label">Due Today</div>
+              <div class="sc-value" id="c-today">0</div>
+              <div class="sc-sub" id="c-today-amt">₱0.00</div>
+            </div>
+            <span class="sc-badge" id="c-today-badge" style="display:none">TODAY!</span>
+          </div>
+          <div class="stat-card sc-month">
+            <div class="sc-icon">📅</div>
+            <div class="sc-info">
+              <div class="sc-label">This Month</div>
+              <div class="sc-value" id="c-month">0</div>
+              <div class="sc-sub" id="c-month-amt">₱0.00</div>
+            </div>
+            <span class="sc-badge sc-badge" style="background:#dbeafe;color:#1e40af" id="c-month-label">THIS
+              MONTH</span>
+          </div>
+        </div>
+
+        <!-- Alert strips -->
+        <div class="alert-strip a-danger" id="alert-overdue">
+          <div class="alert-icon">🚨</div>
+          <div class="alert-body">
+            <div class="alert-title">OVERDUE BILLS — Immediate attention required!</div>
+            <div class="alert-pills" id="alert-overdue-list"></div>
+          </div>
+        </div>
+        <div class="alert-strip a-warn" id="alert-soon">
+          <div class="alert-icon">⚠️</div>
+          <div class="alert-body">
+            <div class="alert-title">DUE WITHIN 3 DAYS — Pay soon to avoid late charges</div>
+            <div class="alert-pills" id="alert-soon-list"></div>
+          </div>
+        </div>
+
+        <!-- Spending Charts -->
+        <div class="charts-row" id="charts-row">
+          <div class="chart-card">
+            <h3>📊 Spending by Category</h3>
+            <div class="chart-canvas-wrap"><canvas id="chart-category"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <h3>📈 Monthly Trend</h3>
+              <span id="budget-settings-link" style="font-size:11px;color:var(--primary);cursor:pointer;font-weight:700"
+                onclick="openBudgetSettings()">⚙️ Budget Limits</span>
+            </div>
+            <div class="chart-canvas-wrap"><canvas id="chart-monthly"></canvas></div>
+            <div class="budget-row" id="budget-bars"></div>
+          </div>
+        </div>
+
+        <!-- Upcoming + Recent -->
+        <div class="bottom-row">
+          <div class="mini-panel">
+            <div class="mini-panel-head">⏳ Upcoming Bills <span class="mp-sub">Next due dates</span></div>
+            <div class="mini-panel-body" id="upcoming-list">
+              <div class="mini-empty">No upcoming bills</div>
+            </div>
+          </div>
+          <div class="mini-panel">
+            <div class="mini-panel-head">✅ Recent Payments <span class="mp-sub">Last paid</span></div>
+            <div class="mini-panel-body" id="recent-list">
+              <div class="mini-empty">No payments yet</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /dashboard -->
+
+    <!-- ════ BILLS PAGE ════ -->
+    <div id="page-bills" class="page">
+      <div class="bills-body">
+
+        <!-- Filter bar -->
+        <div class="bills-filters">
+          <div class="tabs">
+            <button class="tab active" data-filter="all">All</button>
+            <button class="tab" data-filter="Unpaid">Unpaid</button>
+            <button class="tab" data-filter="Paid">Paid</button>
+            <button class="tab" data-filter="Overdue">🚨 Overdue</button>
+          </div>
+          <div class="f-spacer"></div>
+          <select class="filter-select" id="filter-month">
+            <option value="">📅 All Months</option>
+          </select>
+          <select class="filter-select" id="filter-cutoff">
+            <option value="">✂️ All Cuts</option>
+            <option value="1-15">1st Cut (1–15)</option>
+            <option value="16-31">2nd Cut (16–31)</option>
+          </select>
+          <select class="filter-select" id="filter-category">
+            <option value="">All Categories</option>
+            <option>Utilities</option>
+            <option>Rent</option>
+            <option>Internet</option>
+            <option>Phone</option>
+            <option>Insurance</option>
+            <option>Supplies</option>
+            <option>Salary</option>
+            <option>Government</option>
+            <option>Others</option>
+          </select>
+          <div class="search-wrap">
+            <span class="si">🔍</span>
+            <input type="text" id="filter-search" placeholder="Search bills…" />
+          </div>
+          <div class="view-toggle">
+            <button class="view-btn active" id="btn-list-view" title="List view" onclick="setView('list')">☰
+              List</button>
+            <button class="view-btn" id="btn-cal-view" title="Calendar view" onclick="setView('calendar')">📅
+              Cal</button>
+          </div>
+          <button class="export-btn" onclick="window.print()" title="Export to PDF">🖨️ <span
+              class="btn-text">Print</span></button>
+          <span id="row-count"></span>
+        </div>
+
+        <!-- Calendar view -->
+        <div class="cal-wrap" id="cal-view" style="display:none">
+          <div class="cal-nav">
+            <button class="budget-btn" onclick="calPrev()">‹</button>
+            <h3 id="cal-month-label"></h3>
+            <button class="budget-btn" onclick="calNext()">›</button>
+          </div>
+          <div class="cal-header">
+            <div class="cal-dow">Sun</div>
+            <div class="cal-dow">Mon</div>
+            <div class="cal-dow">Tue</div>
+            <div class="cal-dow">Wed</div>
+            <div class="cal-dow">Thu</div>
+            <div class="cal-dow">Fri</div>
+            <div class="cal-dow">Sat</div>
+          </div>
+          <div class="cal-grid" id="cal-grid"></div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-scroll" id="list-view">
+          <div class="empty-state" id="empty-msg">
+            <div class="ei">📄</div>
+            <h3>Loading bills…</h3>
+            <p>Please wait</p>
+          </div>
+          <table id="bills-table" style="display:none">
+            <thead>
+              <tr>
+                <th onclick="sortBy('Bill Name')">Bill Name</th>
+                <th class="no-sort th-group-col" style="display:none">Group</th>
+                <th onclick="sortBy('Category')">Category</th>
+                <th onclick="sortBy('Amount')">Amount</th>
+                <th onclick="sortBy('Due Date')">Due / Cut-off Date</th>
+                <th class="no-sort">Status</th>
+                <th onclick="sortBy('Payment Date')">Date Paid</th>
+                <th class="no-sort">Notes</th>
+                <th class="no-sort">Proof</th>
+                <th class="no-sort">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="bills-body"></tbody>
+          </table>
+        </div>
+
+      </div>
+    </div><!-- /bills -->
+
+    <!-- ════ LOANS PAGE ════ -->
+    <div id="page-loans" class="page">
+      <div class="bills-body">
+
+        <!-- KPI section -->
+        <div class="loans-kpi">
+          <div class="hero-row">
+            <div class="hero-card hc-total">
+              <div class="hc-label">💰 Total Borrowed</div>
+              <div class="hc-value" id="l-total-amt">₱0.00</div>
+              <div class="hc-sub"><strong id="l-total-count">0</strong> loans</div>
+            </div>
+            <div class="hero-card hc-paid">
+              <div class="hc-label">✅ Total Paid</div>
+              <div class="hc-value" id="l-paid-amt">₱0.00</div>
+              <div class="hc-sub"><strong id="l-progress-pct">0%</strong> of total</div>
+              <div class="hc-bar-wrap">
+                <div class="hc-bar" id="l-progress-bar" style="width:0%"></div>
+              </div>
+            </div>
+            <div class="hero-card hc-remain">
+              <div class="hc-label">⏳ Outstanding</div>
+              <div class="hc-value" id="l-outstanding-amt">₱0.00</div>
+              <div class="hc-sub"><strong id="l-overdue-count" style="color:var(--danger)">0</strong> overdue</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter bar -->
+        <div class="bills-filters">
+          <div class="tabs" id="loan-tabs">
+            <button class="tab active" data-loan-filter="all">All</button>
+            <button class="tab" data-loan-filter="Active">Active</button>
+            <button class="tab" data-loan-filter="Overdue">🚨 Overdue</button>
+            <button class="tab" data-loan-filter="Paid Off">✅ Paid</button>
+          </div>
+          <div class="f-spacer"></div>
+          <div class="search-wrap">
+            <span class="si">🔍</span>
+            <input type="text" id="loan-search" placeholder="Search loans…" />
+          </div>
+          <span id="loan-row-count"></span>
+          <button id="btn-add-loan"
+            style="display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;white-space:nowrap">＋
+            <span class="btn-text">Add Loan</span></button>
+        </div>
+
+        <!-- Table -->
+        <div class="table-scroll">
+          <div class="empty-state" id="loans-empty">
+            <div class="ei">💳</div>
+            <h3>No loans yet</h3>
+            <p>Click "＋ Add Loan" to start tracking</p>
+          </div>
+          <table id="loans-table" style="display:none">
+            <thead>
+              <tr>
+                <th>Loan Name</th>
+                <th class="no-sort th-group-col" style="display:none">Group</th>
+                <th>Lender / From</th>
+                <th>Principal</th>
+                <th>Monthly Due</th>
+                <th style="min-width:140px">Paid / Progress</th>
+                <th>Remaining</th>
+                <th class="no-sort">Status</th>
+                <th class="no-sort">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="loans-body"></tbody>
+          </table>
+        </div>
+
+      </div>
+    </div><!-- /loans -->
+
+    <!-- ════ USERS PAGE (admin only) ════ -->
+    <div id="page-users" class="page">
+      <div class="bills-body">
+        <div class="bills-filters">
+          <div class="tabs" id="users-tabs">
+            <button class="tab active" data-user-filter="all">All</button>
+            <button class="tab" data-user-filter="Pending">⏳ Pending</button>
+            <button class="tab" data-user-filter="Active">✅ Active</button>
+            <button class="tab" data-user-filter="Rejected">🚫 Rejected</button>
+          </div>
+          <div class="f-spacer"></div>
+          <span id="users-count" style="font-size:12px;color:var(--muted)"></span>
+          <button onclick="loadUsers()"
+            style="padding:7px 14px;border:1px solid var(--border);background:var(--card);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text);font-family:inherit">🔄
+            Refresh</button>
+        </div>
+        <div class="table-scroll">
+          <div class="empty-state" id="users-empty" style="display:none">
+            <div class="ei">👥</div>
+            <h3>No users found</h3>
+            <p>Adjust your filter</p>
+          </div>
+          <table id="users-table" style="display:none">
+            <thead>
+              <tr>
+                <th class="no-sort">#</th>
+                <th class="no-sort">Username</th>
+                <th class="no-sort">Group</th>
+                <th class="no-sort">Status</th>
+                <th class="no-sort">Registered</th>
+                <th class="no-sort">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div><!-- /users -->
+
+    <!-- ════ GROUPS PAGE (admin only) ════ -->
+    <div id="page-groups" class="page">
+      <div class="bills-body">
+        <div class="bills-filters">
+          <div style="font-size:13px;color:var(--muted)">Manage household groups. Users select a group when registering.
+          </div>
+          <div class="f-spacer"></div>
+          <span id="groups-count" style="font-size:12px;color:var(--muted)"></span>
+          <button onclick="loadGroups()"
+            style="padding:7px 14px;border:1px solid var(--border);background:var(--card);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text);font-family:inherit">🔄
+            Refresh</button>
+          <button id="btn-add-group" onclick="openGroupModal()"
+            style="padding:7px 16px;background:var(--primary);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit">+
+            Add Group</button>
+        </div>
+        <div class="table-scroll">
+          <div class="empty-state" id="groups-empty" style="display:none">
+            <div class="ei">🏠</div>
+            <h3>No groups yet</h3>
+            <p>Add a group so users can register</p>
+          </div>
+          <table id="groups-table" style="display:none">
+            <thead>
+              <tr>
+                <th class="no-sort">#</th>
+                <th class="no-sort">Group Name</th>
+                <th class="no-sort">Code</th>
+                <th class="no-sort">Description</th>
+                <th class="no-sort">Members</th>
+                <th class="no-sort">Created</th>
+                <th class="no-sort">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="groups-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div><!-- /groups -->
+
+  </div><!-- /content -->
+
+  <!-- ════ ADD GROUP MODAL ════ -->
+  <div class="overlay" id="group-modal-overlay">
+    <div class="modal" style="max-width:440px">
+      <div class="modal-drag"></div>
+      <h2 id="group-modal-title">Add Group</h2>
+      <div class="form-grid">
+        <div class="field full"><label>Group Name *</label><input type="text" id="gf-name"
+            placeholder="e.g. Neo Household" oninput="autoGroupCode(this.value)" /></div>
+        <div class="field full">
+          <label>Group Code <span style="font-size:11px;color:var(--muted)">(auto-generated — edit only if
+              needed)</span></label>
+          <div style="position:relative">
+            <input type="text" id="gf-code" placeholder="auto" style="padding-right:70px" />
+            <span id="gf-code-lock"
+              style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--muted);pointer-events:none">auto
+              ✨</span>
+          </div>
+        </div>
+        <div class="field full"><label>Description</label><input type="text" id="gf-desc"
+            placeholder="Optional description…" /></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeGroupModal()">Cancel</button>
+        <button class="btn-primary" id="btn-group-save" onclick="saveGroup()">Save Group</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ CHANGE OWN PASSWORD MODAL ════ -->
+  <div class="overlay" id="changepw-overlay">
+    <div class="modal" style="max-width:400px">
+      <div class="modal-drag"></div>
+      <h2>🔒 Change Password</h2>
+      <div id="changepw-alert"
+        style="display:none;border-radius:9px;padding:10px 14px;font-size:13px;font-weight:500;margin-bottom:14px;align-items:center;gap:8px">
+      </div>
+      <div class="form-grid">
+        <div class="field full"><label>Current Password</label><input type="password" id="cpw-current"
+            placeholder="Enter current password" /></div>
+        <div class="field full"><label>New Password</label><input type="password" id="cpw-new"
+            placeholder="At least 6 characters" /></div>
+        <div class="field full"><label>Confirm New Password</label><input type="password" id="cpw-confirm"
+            placeholder="Re-enter new password" /></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeChangePw()">Cancel</button>
+        <button class="btn-primary" id="btn-changepw-save" onclick="saveChangePw()">Update Password</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ RESET USER PASSWORD MODAL (admin) ════ -->
+  <div class="overlay" id="resetpw-overlay">
+    <div class="modal" style="max-width:400px">
+      <div class="modal-drag"></div>
+      <h2>🔑 Reset Password</h2>
+      <p id="resetpw-sub" style="font-size:13px;color:var(--muted);margin-bottom:18px"></p>
+      <div id="resetpw-alert"
+        style="display:none;border-radius:9px;padding:10px 14px;font-size:13px;font-weight:500;margin-bottom:14px;align-items:center;gap:8px">
+      </div>
+      <div class="form-grid">
+        <div class="field full"><label>New Password</label><input type="password" id="rpw-new"
+            placeholder="At least 6 characters" /></div>
+        <div class="field full"><label>Confirm Password</label><input type="password" id="rpw-confirm"
+            placeholder="Re-enter new password" /></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeResetPw()">Cancel</button>
+        <button class="btn-primary" id="btn-resetpw-save" onclick="saveResetPw()">Reset Password</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ HELP / GUIDE MODAL ════ -->
+  <div class="help-overlay" id="help-overlay" onclick="if(event.target===this)closeHelp()">
+    <div class="help-modal">
+
+      <div class="help-header">
+        <div>
+          <h2>📖 How to Use Expense Monitor</h2>
+          <p>Step-by-step guide from login to managing transactions</p>
+        </div>
+        <button class="help-close" onclick="closeHelp()">✕</button>
+      </div>
+
+      <!-- Step tabs -->
+      <div class="help-steps-nav" id="help-tabs"></div>
+
+      <!-- Slides -->
+      <div class="help-body">
+
+        <!-- Step 1: Login -->
+        <div class="help-slide active" data-step="0">
+          <div class="help-slide-header">
+            <div class="help-step-icon">🔐</div>
+            <div>
+              <h3>Step 1 — Sign In</h3>
+              <p>Open the app at <strong>http://localhost:3000</strong> and sign in with your username and password.
+                First-time default: <code
+                  style="background:var(--bg);padding:1px 5px;border-radius:4px">admin / admin123</code></p>
+            </div>
+          </div>
+          <div class="help-mockup">
+            <div class="mock-bar">
+              <div class="mock-dot" style="background:#ff5f57"></div>
+              <div class="mock-dot" style="background:#febc2e"></div>
+              <div class="mock-dot" style="background:#28c840"></div>
+              <span style="font-size:10px;color:rgba(255,255,255,.5);margin-left:8px">localhost:3000/login</span>
+            </div>
+            <div class="mock-body" style="display:flex;gap:0;padding:0">
+              <div
+                style="flex:0 0 200px;background:linear-gradient(160deg,#3730a3,#4c1d95);padding:20px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+                <div
+                  style="background:#fff;border-radius:10px;padding:6px 10px;margin-bottom:10px;display:inline-block">
+                  <span style="font-size:22px">💰</span>
+                </div>
+                <div style="font-size:13px;font-weight:800;color:#fff">Expense Monitor</div>
+                <div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:4px">Track your bills &amp; loans</div>
+              </div>
+              <div style="flex:1;background:#fff;padding:18px 16px">
+                <div style="font-size:13px;font-weight:800;color:#1e293b;margin-bottom:12px">Welcome back 👋</div>
+                <div
+                  style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px 10px;font-size:11px;color:#94a3b8;margin-bottom:6px">
+                  👤 Username</div>
+                <div
+                  style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px 10px;font-size:11px;color:#94a3b8;margin-bottom:10px">
+                  🔑 Password</div>
+                <div
+                  style="background:linear-gradient(135deg,#6366f1,#4f46e5);border-radius:8px;padding:9px;text-align:center;font-size:11px;font-weight:700;color:#fff">
+                  Sign In</div>
+              </div>
+            </div>
+          </div>
+          <div class="help-tips">
+            <p>💡 Tips</p>
+            <ul>
+              <li>Default admin password is <strong>admin123</strong> — change it after first login</li>
+              <li>If your account shows "Pending", wait for the admin to approve it</li>
+              <li>Forgot password? Ask the admin to reset it from the Users page</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Step 2: Register -->
+        <div class="help-slide" data-step="1">
+          <div class="help-slide-header">
+            <div class="help-step-icon">📝</div>
+            <div>
+              <h3>Step 2 — Create an Account</h3>
+              <p>New members click <strong>"Create Account"</strong> on the login page. Fill in username, choose your
+                household group, set a password, and submit. Your account waits for admin approval.</p>
+            </div>
+          </div>
+          <div class="help-mockup">
+            <div class="mock-bar">
+              <div class="mock-dot" style="background:#ff5f57"></div>
+              <div class="mock-dot" style="background:#febc2e"></div>
+              <div class="mock-dot" style="background:#28c840"></div>
+              <span style="font-size:10px;color:rgba(255,255,255,.5);margin-left:8px">localhost:3000/register</span>
+            </div>
+            <div class="mock-body" style="display:flex;gap:0;padding:0">
+              <div
+                style="flex:0 0 160px;background:linear-gradient(160deg,#3730a3,#4c1d95);padding:16px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center">
+                <div style="background:#fff;border-radius:10px;padding:5px 8px;margin-bottom:8px;display:inline-block">
+                  <span style="font-size:18px">💰</span>
+                </div>
+                <div style="font-size:11px;font-weight:800;color:#fff;text-align:center">Join Expense Monitor</div>
+                <div style="margin-top:10px;text-align:left;width:100%">
+                  <div style="font-size:9px;color:rgba(255,255,255,.5);padding:3px 0 3px 12px;position:relative">①<span
+                      style="position:absolute;left:0">→</span> Choose group</div>
+                  <div style="font-size:9px;color:rgba(255,255,255,.5);padding:3px 0 3px 12px">② Set password</div>
+                  <div style="font-size:9px;color:rgba(255,255,255,.5);padding:3px 0 3px 12px">③ Wait approval</div>
+                </div>
+              </div>
+              <div style="flex:1;background:#fff;padding:16px 14px">
+                <div style="font-size:12px;font-weight:800;color:#1e293b;margin-bottom:10px">Create Account ✨</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+                  <div
+                    style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:6px;padding:6px 8px;font-size:10px;color:#94a3b8">
+                    👤 Username</div>
+                  <div
+                    style="background:#f8fafc;border:1.5px solid #6366f1;border-radius:6px;padding:6px 8px;font-size:10px;color:#6366f1">
+                    🏠 Neo &amp; Nova ▼</div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+                  <div
+                    style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:6px;padding:6px 8px;font-size:10px;color:#94a3b8">
+                    🔑 Password</div>
+                  <div
+                    style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:6px;padding:6px 8px;font-size:10px;color:#94a3b8">
+                    🔒 Confirm</div>
+                </div>
+                <div
+                  style="background:linear-gradient(135deg,#6366f1,#4f46e5);border-radius:7px;padding:7px;text-align:center;font-size:10px;font-weight:700;color:#fff">
+                  Create Account</div>
+              </div>
+            </div>
+          </div>
+          <div class="help-tips">
+            <p>💡 Tips</p>
+            <ul>
+              <li>Username: 3–20 characters, letters/numbers/underscore only</li>
+              <li>Password must be at least 6 characters</li>
+              <li>Select the correct household group — this determines which bills you see</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Step 3: Dashboard -->
+        <div class="help-slide" data-step="2">
+          <div class="help-slide-header">
+            <div class="help-step-icon">📊</div>
+            <div>
+              <h3>Step 3 — Dashboard Overview</h3>
+              <p>After login you see the <strong>Dashboard</strong> — summary cards showing total bills, unpaid amount,
+                overdue count, and charts. Use the cut-off filter to view 1st or 2nd half of the month.</p>
+            </div>
+          </div>
+          <div class="help-mockup">
+            <div class="mock-bar">
+              <div class="mock-dot" style="background:#ff5f57"></div>
+              <div class="mock-dot" style="background:#febc2e"></div>
+              <div class="mock-dot" style="background:#28c840"></div>
+            </div>
+            <div class="mock-body" style="display:flex;gap:0;padding:0">
+              <div style="width:90px;background:linear-gradient(180deg,#1e1b4b,#312e81);padding:10px 8px">
+                <div style="font-size:9px;font-weight:800;color:#fff;margin-bottom:10px;text-align:center">Expense
+                  Monitor</div>
+                <div
+                  style="background:rgba(255,255,255,.18);border-radius:6px;padding:5px 6px;font-size:9px;color:#fff;margin-bottom:3px">
+                  📊 Dashboard</div>
+                <div
+                  style="border-radius:6px;padding:5px 6px;font-size:9px;color:rgba(255,255,255,.6);margin-bottom:3px">
+                  📋 Bills</div>
+                <div
+                  style="border-radius:6px;padding:5px 6px;font-size:9px;color:rgba(255,255,255,.6);margin-bottom:3px">
+                  💳 Loans</div>
+              </div>
+              <div style="flex:1;background:#f1f5f9;padding:10px">
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">
+                  <div style="background:#fff;border-radius:8px;padding:8px;border:1px solid #e2e8f0">
+                    <div style="font-size:9px;color:#94a3b8">Total Bills</div>
+                    <div style="font-size:13px;font-weight:800;color:#1e293b">₱12,500</div>
+                  </div>
+                  <div style="background:#fff;border-radius:8px;padding:8px;border:1px solid #e2e8f0">
+                    <div style="font-size:9px;color:#94a3b8">Unpaid</div>
+                    <div style="font-size:13px;font-weight:800;color:#f59e0b">₱4,200</div>
+                  </div>
+                  <div style="background:#fff;border-radius:8px;padding:8px;border:1px solid #e2e8f0">
+                    <div style="font-size:9px;color:#94a3b8">Overdue</div>
+                    <div style="font-size:13px;font-weight:800;color:#ef4444">2</div>
+                  </div>
+                </div>
+                <div
+                  style="background:#fff;border-radius:8px;border:1px solid #e2e8f0;padding:8px;height:50px;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:10px">
+                  📈 Spending Chart</div>
+              </div>
+            </div>
+          </div>
+          <div class="help-tips">
+            <p>💡 Tips</p>
+            <ul>
+              <li>Use <strong>1st Cut (1–15)</strong> / <strong>2nd Cut (16–31)</strong> to filter by cut-off period
+              </li>
+              <li>Red numbers = overdue bills that need attention</li>
+              <li>Dark mode toggle is at the top-right (🌙)</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Step 4: Bills -->
+        <div class="help-slide" data-step="3">
+          <div class="help-slide-header">
+            <div class="help-step-icon">📋</div>
+            <div>
+              <h3>Step 4 — Managing Bills</h3>
+              <p>Go to <strong>Bills</strong> from the sidebar. Add a bill with the <strong>＋ Add Bill</strong> button.
+                Mark bills as Paid using the ✓ button. Upload proof of payment with 📎.</p>
+            </div>
+          </div>
+          <div class="help-mockup">
+            <div class="mock-bar">
+              <div class="mock-dot" style="background:#ff5f57"></div>
+              <div class="mock-dot" style="background:#febc2e"></div>
+              <div class="mock-dot" style="background:#28c840"></div>
+            </div>
+            <div class="mock-body" style="padding:10px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <div style="display:flex;gap:4px">
+                  <span
+                    style="background:#6366f1;color:#fff;padding:3px 9px;border-radius:99px;font-size:9px;font-weight:700">All</span>
+                  <span
+                    style="background:#f1f5f9;color:#94a3b8;padding:3px 9px;border-radius:99px;font-size:9px">Unpaid</span>
+                  <span
+                    style="background:#f1f5f9;color:#94a3b8;padding:3px 9px;border-radius:99px;font-size:9px">Paid</span>
+                </div>
+                <div
+                  style="background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;padding:4px 10px;border-radius:6px;font-size:9px;font-weight:700">
+                  ＋ Add Bill</div>
+              </div>
+              <div class="mock-row"><span>⚡ Meralco — Oct</span><span
+                  class="mock-badge mock-tag-over">Overdue</span><span
+                  style="margin-left:auto;font-weight:700;color:#ef4444">₱2,500</span></div>
+              <div class="mock-row"><span>🌐 Internet — Oct</span><span
+                  class="mock-badge mock-tag-unpaid">Unpaid</span><span
+                  style="margin-left:auto;font-weight:700;color:#f59e0b">₱1,299</span></div>
+              <div class="mock-row"><span>🏠 Rent — Oct</span><span class="mock-badge mock-tag-paid">Paid</span><span
+                  style="margin-left:auto;font-weight:700;color:#22c55e">₱8,000</span></div>
+            </div>
+          </div>
+          <div class="help-tips">
+            <p>💡 Tips</p>
+            <ul>
+              <li>Click <strong>✓</strong> on a row to quickly mark a bill as Paid</li>
+              <li>Click <strong>📎</strong> to upload a photo of the receipt as proof</li>
+              <li>Set <strong>Recurrence</strong> (monthly, weekly) and bills auto-copy each period</li>
+              <li>Switch to 📅 Calendar view to see bills on a calendar</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Step 5: Loans -->
+        <div class="help-slide" data-step="4">
+          <div class="help-slide-header">
+            <div class="help-step-icon">💳</div>
+            <div>
+              <h3>Step 5 — Loan Tracker</h3>
+              <p>Go to <strong>Loans</strong> to track borrowed money. Add a loan with lender, principal, and monthly
+                payment. Click <strong>💳 Pay</strong> to record each payment and watch the progress bar fill up.</p>
+            </div>
+          </div>
+          <div class="help-mockup">
+            <div class="mock-bar">
+              <div class="mock-dot" style="background:#ff5f57"></div>
+              <div class="mock-dot" style="background:#febc2e"></div>
+              <div class="mock-dot" style="background:#28c840"></div>
+            </div>
+            <div class="mock-body" style="padding:10px">
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">
+                <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px">
+                  <div style="font-size:9px;color:#166534">Total Borrowed</div>
+                  <div style="font-size:12px;font-weight:800;color:#166534">₱50,000</div>
+                </div>
+                <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px">
+                  <div style="font-size:9px;color:#1d4ed8">Total Paid</div>
+                  <div style="font-size:12px;font-weight:800;color:#1d4ed8">₱20,000</div>
+                </div>
+                <div style="background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:8px">
+                  <div style="font-size:9px;color:#854d0e">Outstanding</div>
+                  <div style="font-size:12px;font-weight:800;color:#854d0e">₱30,000</div>
+                </div>
+              </div>
+              <div class="mock-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+                <div style="display:flex;width:100%;align-items:center;justify-content:space-between">
+                  <span style="font-weight:700;font-size:11px">SSS Salary Loan</span>
+                  <span class="mock-badge mock-tag-unpaid">Active</span>
+                </div>
+                <div style="width:100%;background:#e2e8f0;border-radius:99px;height:5px">
+                  <div style="width:40%;height:100%;background:#6366f1;border-radius:99px"></div>
+                </div>
+                <div style="font-size:9px;color:#94a3b8">₱20,000 paid · 40% · ₱30,000 remaining</div>
+              </div>
+            </div>
+          </div>
+          <div class="help-tips">
+            <p>💡 Tips</p>
+            <ul>
+              <li>Click <strong>💳 Pay</strong> to log a payment — it updates the progress bar automatically</li>
+              <li>Set <strong>Due Day</strong> so overdue loans are flagged in red</li>
+              <li>Loan is marked <strong>Paid Off</strong> automatically when payments reach the principal</li>
+            </ul>
+          </div>
+        </div>
+
+      </div><!-- /help-body -->
+
+      <div class="help-footer">
+        <span class="help-counter" id="help-counter">Step 1 of 5</span>
+        <div class="help-nav-btns">
+          <button class="help-nav-btn" id="btn-help-prev" onclick="helpNav(-1)">← Previous</button>
+          <button class="help-nav-btn primary" id="btn-help-next" onclick="helpNav(1)">Next →</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════ APPROVE USER CONFIRMATION MODAL ════ -->
+  <div class="overlay" id="approveconfirm-overlay">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-drag"></div>
+      <h2>✅ Approve User</h2>
+      <p id="approveconfirm-sub" style="font-size:13px;color:var(--muted);margin-bottom:18px"></p>
+
+      <div id="approveconfirm-alert"
+        style="display:none;background:#fef3c7;border:1px solid #fde68a;color:#92400e;border-radius:9px;padding:10px 14px;font-size:13px;margin-bottom:14px">
+      </div>
+
+      <label class="modal-label">Household Group</label>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:8px">
+        This member selected the group below when registering. Confirm it is correct or change it before approving.
+      </p>
+      <div class="input-wrap" style="margin-bottom:20px">
+        <span class="input-icon">🏠</span>
+        <select id="approveconfirm-group" class="modal-input" style="padding-left:34px">
+          <option value="">Loading…</option>
+        </select>
+      </div>
+
+      <div style="display:flex;gap:10px">
+        <button class="btn-sec" style="flex:1"
+          onclick="document.getElementById('approveconfirm-overlay').classList.remove('open')">Cancel</button>
+        <button class="btn-primary" style="flex:2;background:linear-gradient(135deg,#22c55e,#16a34a)"
+          id="btn-approveconfirm-save" onclick="saveApproveConfirm()">✅ Confirm &amp; Approve</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ CHANGE USER GROUP MODAL (admin) ════ -->
+  <div class="overlay" id="changegroup-overlay">
+    <div class="modal" style="max-width:400px">
+      <div class="modal-drag"></div>
+      <h2>🏠 Change Group</h2>
+      <p id="changegroup-sub" style="font-size:13px;color:var(--muted);margin-bottom:18px"></p>
+      <div id="changegroup-alert"
+        style="display:none;border-radius:9px;padding:10px 14px;font-size:13px;font-weight:500;margin-bottom:14px;align-items:center;gap:8px">
+      </div>
+      <div class="form-grid">
+        <div class="field full">
+          <label>Assign to Group</label>
+          <div style="position:relative">
+            <span
+              style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none">🏠</span>
+            <select id="cg-group"
+              style="width:100%;padding:11px 13px 11px 38px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;color:var(--text);outline:none;background:var(--card);appearance:none;cursor:pointer">
+            </select>
+            <span
+              style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--muted);font-size:12px">▼</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeChangeGroup()">Cancel</button>
+        <button class="btn-primary" id="btn-changegroup-save" onclick="saveChangeGroup()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ ADD / EDIT MODAL ════ -->
+  <div class="overlay" id="modal-overlay">
+    <div class="modal">
+      <div class="modal-drag"></div>
+      <h2 id="modal-title">Add New Bill</h2>
+      <div class="form-grid">
+        <div class="field full"><label>Bill Name *</label><input type="text" id="f-name"
+            placeholder="e.g. Meralco — October 2025" /></div>
+        <div class="field"><label>Category</label>
+          <select id="f-category">
+            <option>Utilities</option>
+            <option>Rent</option>
+            <option>Internet</option>
+            <option>Phone</option>
+            <option>Insurance</option>
+            <option>Supplies</option>
+            <option>Salary</option>
+            <option>Government</option>
+            <option>Others</option>
+          </select>
+        </div>
+        <div class="field"><label>Amount (₱) *</label><input type="number" id="f-amount" placeholder="0.00" min="0"
+            step="0.01" /></div>
+        <div class="field"><label>Due / Cut-off Date *</label><input type="date" id="f-due" /></div>
+        <div class="field"><label>Status</label>
+          <select id="f-status">
+            <option>Unpaid</option>
+            <option>Paid</option>
+          </select>
+        </div>
+        <div class="field"><label>Date Paid</label><input type="date" id="f-paydate" /></div>
+        <div class="field">
+          <label>Recurrence</label>
+          <select id="f-recurrence">
+            <option value="">None (one-time)</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="bimonthly">Every 2 months</option>
+            <option value="yearly">Yearly</option>
+          </select>
+        </div>
+        <div class="field full"><label>Notes</label><input type="text" id="f-notes" placeholder="Optional remarks…" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-modal-cancel">Cancel</button>
+        <button class="btn-primary" id="btn-modal-save">Save Bill</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ ADD / EDIT LOAN MODAL ════ -->
+  <div class="overlay" id="loan-modal-overlay">
+    <div class="modal">
+      <div class="modal-drag"></div>
+      <h2 id="loan-modal-title">Add New Loan</h2>
+      <div class="form-grid">
+        <div class="field full"><label>Loan Name *</label><input type="text" id="lf-name"
+            placeholder="e.g. BDO Personal Loan" /></div>
+        <div class="field"><label>Lender / From *</label><input type="text" id="lf-lender"
+            placeholder="e.g. BDO, SSS, Friend" /></div>
+        <div class="field"><label>Principal Amount (₱) *</label><input type="number" id="lf-principal"
+            placeholder="0.00" min="0" step="0.01" /></div>
+        <div class="field"><label>Monthly Payment (₱)</label><input type="number" id="lf-monthly" placeholder="0.00"
+            min="0" step="0.01" /></div>
+        <div class="field"><label>Total Terms (months)</label><input type="number" id="lf-terms" placeholder="e.g. 24"
+            min="1" /></div>
+        <div class="field"><label>Due Day of Month</label><input type="number" id="lf-dueday" placeholder="e.g. 15"
+            min="1" max="31" /></div>
+        <div class="field"><label>Start Date</label><input type="date" id="lf-startdate" /></div>
+        <div class="field full"><label>Notes</label><input type="text" id="lf-notes" placeholder="Optional remarks…" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-loan-cancel">Cancel</button>
+        <button class="btn-primary" id="btn-loan-save">Add Loan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ LOAN PAYMENTS MODAL ════ -->
+  <div class="overlay" id="loan-pmt-overlay">
+    <div class="modal" style="max-width:540px">
+      <div class="modal-drag"></div>
+      <h2 id="pmt-loan-name">Loan Payments</h2>
+
+      <!-- Summary bar -->
+      <div style="margin-bottom:14px">
+        <div
+          style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px;flex-wrap:wrap">
+          <span id="pmt-paid-label" style="font-size:13px;font-weight:700;color:var(--success)">₱0 paid</span>
+          <span id="pmt-pct-label" style="font-size:12px;color:var(--muted)">0%</span>
+          <span id="pmt-remaining-label" style="font-size:13px;font-weight:700;color:var(--warning)">₱0 remaining</span>
+        </div>
+        <div class="hc-bar-wrap">
+          <div class="hc-bar" id="pmt-progress" style="width:0%"></div>
+        </div>
+      </div>
+
+      <!-- Add payment inline form -->
+      <div style="background:var(--bg);border-radius:var(--radius);padding:14px;margin-bottom:14px">
+        <div
+          style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">
+          ➕ Record a Payment</div>
+        <div class="form-grid" style="gap:10px">
+          <div class="field">
+            <label>Amount Paid (₱) *</label>
+            <input type="number" id="pf-amount" placeholder="0.00" min="0" step="0.01" />
+          </div>
+          <div class="field">
+            <label>Payment Date *</label>
+            <input type="date" id="pf-date" />
+          </div>
+          <div class="field full">
+            <label>Notes</label>
+            <input type="text" id="pf-notes" placeholder="e.g. Online transfer, receipt #123…" />
+          </div>
+        </div>
+        <button class="btn-primary" id="btn-add-payment" style="margin-top:10px;width:100%">✅ Record Payment</button>
+      </div>
+
+      <!-- Payment history list -->
+      <div
+        style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">
+        📋 Payment History</div>
+      <div class="pmt-list" id="pmt-list"></div>
+
+      <div class="modal-footer" style="margin-top:14px">
+        <button class="btn-secondary" id="btn-pmt-close" style="flex:1">Close</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ════ BUDGET SETTINGS MODAL ════ -->
+  <div class="overlay" id="budget-modal-overlay">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-drag"></div>
+      <h2>⚙️ Budget Limits per Category</h2>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Set a monthly spending cap per category. Leave
+        blank or 0 for no limit.</p>
+      <div class="form-grid" id="budget-fields"></div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-budget-cancel">Cancel</button>
+        <button class="btn-primary" id="btn-budget-save">Save Limits</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ PROOF LIGHTBOX ════ -->
+  <div id="lightbox-overlay">
+    <div class="lb-toolbar">
+      <span class="lb-title" id="lb-title">📎 Payment Proof</span>
+      <a class="lb-btn lb-download" id="lb-download" download>⬇ Download</a>
+      <button class="lb-btn lb-del" id="lb-remove">🗑 Remove</button>
+      <button class="lb-btn lb-close" id="lb-close">✕ Close</button>
+    </div>
+    <div id="lb-body"></div>
+  </div>
+  <input type="file" id="att-file-input" accept="image/*,.pdf" style="display:none">
+
+  <!-- ════ DELETE CONFIRM ════ -->
+  <div id="confirm-overlay">
+    <div class="confirm-box">
+      <div class="ci">🗑️</div>
+      <h3>Delete Bill?</h3>
+      <p id="confirm-msg">This cannot be undone.</p>
+      <div class="confirm-actions">
+        <button class="btn-ghost" id="btn-no">Cancel</button>
+        <button class="btn-danger" id="btn-yes">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script src="/app.js"></script>
+</body>
+
+</html>
